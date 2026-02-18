@@ -25,6 +25,8 @@
 #include "quest/include/matrices.h"
 #include "quest/include/channels.h"
 
+#include <stdbool.h>
+
 #ifdef __cplusplus
     #include <vector>
 #endif
@@ -2398,12 +2400,67 @@ extern "C" {
 #endif
 
 
-/// @notyetdoced
-void applyQuantumFourierTransform(Qureg qureg, int* targets, int numTargets);
+/** 
+ * Applies the Quantum Fourier Transform upon the specified @p targets of @p qureg.
+ * Alternatively, applies the Inverse Quantum Fourier Transform according to @p inverse.
+ * 
+ * @formulae
+ * 
+ * Letting @f$ N @f$ = @p numTargets, the @f$ N @f$ qubit Quantum Fourier Transform maps each
+ * computational basis state of the targeted qubits, @f$ \ket{j} @f$, according to
+ * @f[ 
+        \ket{j} \rightarrow \frac{1}{\sqrt{2^N}} \sum_{k=0}^{2^N-1} e^{2 \pi i j k / 2^N} \ket{k}.
+ * @f]
+ * Similarly the Inverse Quantum Fourier Transform maps each basis state like
+ * @f[ 
+        \ket{j} \rightarrow \frac{1}{\sqrt{2^N}} \sum_{k=0}^{2^N-1} e^{-2 \pi i j k / 2^N} \ket{k}.
+ * @f]
+ *
+ * @param[in,out] qureg      the state to modify.
+ * @param[in]     targets    the indices of the target qubits.
+ * @param[in]     numTargets the length of list @p targets
+ * @param[in]     inverse    whether to apply the inverse QFT or forward QFT
+ * @throws @validationerror
+ * - if @p qureg is uninitialised.
+*  - if @p targets are invalid qubit indices.
+*  - if @p targets are not unique.
+ * - if @p numTargets < 1.
+ * @see
+ * - applyFullQuantumFourierTransform()
+ * @author Vasco Ferreira
+ */
+void applyQuantumFourierTransform(Qureg qureg, int* targets, int numTargets, bool inverse);
 
 
-/// @notyetdoced
-void applyFullQuantumFourierTransform(Qureg qureg);
+/** 
+ * Applies the Quantum Fourier Transform upon all qubits in @p qureg. Alternatively,
+ * applies the Inverse Quantum Fourier Transform according to @p inverse.
+ * 
+ * @formulae
+ * 
+ * The Quantum Fourier Transform maps each computational basis state @f$ \ket{j} @f$
+ * in an @f$ N @f$ qubit @p qureg according to
+ * @f[ 
+        \ket{j} \rightarrow \frac{1}{\sqrt{2^N}} \sum_{k=0}^{2^N-1} e^{2 \pi i j k / 2^N} \ket{k}.
+ * @f]
+ * Similarly the Inverse Quantum Fourier Transform maps each basis state like
+ * @f[ 
+        \ket{j} \rightarrow \frac{1}{\sqrt{2^N}} \sum_{k=0}^{2^N-1} e^{-2 \pi i j k / 2^N} \ket{k}.
+ * @f]
+ *
+ * @equivalences
+ *
+ * - This function wraps applyQuantumFourierTransform(), passing all qubits in the @p qureg as targets.
+ *
+ * @param[in,out] qureg      the state to modify.
+ * @param[in]     inverse    whether to apply the inverse QFT or forward QFT
+ * @throws @validationerror
+ * - if @p qureg is uninitialised.
+ * @see
+ * - applyQuantumFourierTransform()
+ * @author Vasco Ferreira
+ */
+void applyFullQuantumFourierTransform(Qureg qureg, bool inverse);
 
 
 // end de-mangler
@@ -2417,7 +2474,7 @@ void applyFullQuantumFourierTransform(Qureg qureg);
 /// @notyetdoced
 /// @cppvectoroverload
 /// @see applyQuantumFourierTransform()
-void applyQuantumFourierTransform(Qureg qureg, std::vector<int> targets);
+void applyQuantumFourierTransform(Qureg qureg, std::vector<int> targets, bool inverse);
 
 
 #endif // __cplusplus
