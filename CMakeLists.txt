@@ -187,6 +187,7 @@ message(STATUS "Disabling of deprecated API warnings is turned ${DISABLE_DEPRECA
 option(INSTALL_BINARIES "Whether to include example and user binaries in the install." OFF)
 
 
+
 # ============================
 # Validate options
 # ============================
@@ -221,6 +222,26 @@ if(WIN32)
     message(FATAL_ERROR "The deprecated API is not compatible with MSVC.")
   endif()
 
+endif()
+
+
+# Encourage high-performance Release build
+
+# Taken from Kitware's exmaple of problematic code at
+# https://cmake.org/cmake/help/latest/manual/cmake-buildsystem.7.html#build-configurations
+# We have to use it here as we want to message the user! We are handling multiconfig
+# separately anyway.
+string(TOLOWER "${CMAKE_BUILD_TYPE}" build_type)
+
+if(CMAKE_CONFIGURATION_TYPES)
+  message(WARNING
+    "You are using a multi-config generator, so make sure to subsequently "
+    "build with '--config Release' for best performance.")
+elseif(NOT (build_type STREQUAL "release" OR build_type STREQUAL "relwithdebinfo"))
+  message(WARNING
+    "Using a non-release build (CMAKE_BUILD_TYPE='${CMAKE_BUILD_TYPE}') "
+    "can significantly degrade performance. "
+    "Consider using -DCMAKE_BUILD_TYPE=Release.")
 endif()
 
 
@@ -742,3 +763,4 @@ install(
 if(PROJECT_IS_TOP_LEVEL)
   include(CPack)
 endif ()
+
