@@ -174,6 +174,11 @@ bool gpu_isCuQuantumCompiled() {
 }
 
 
+bool gpu_isHipCompiled() {
+    return (bool) (QUEST_COMPILE_CUDA && QUEST_COMPILE_HIP);
+}
+
+
 int gpu_getNumberOfLocalGpus() {
 #if QUEST_COMPILE_CUDA
 
@@ -329,6 +334,40 @@ qindex gpu_getMaxNumConcurrentThreads() {
 /*
  * ENVIRONMENT MANAGEMENT
  */
+
+
+// the default numTPB is not known until runtime since the initial value
+// (provided either by the CMake var, or the environment variable) must
+// be validated during QuEST initialisation.
+static int global_numThreadsPerBlock = -1;
+
+
+int gpu_getNumThreadsPerBlock() {
+    if (global_numThreadsPerBlock == -1)
+        error_gpuNumThreadsPerBlockNotSet();
+
+    return global_numThreadsPerBlock;
+}
+
+
+void gpu_setNumThreadsPerBlock(int newNumTPB) {
+
+    global_numThreadsPerBlock = newNumTPB;
+}
+
+
+int gpu_getMaxNumThreadsPerBlock() {
+#if QUEST_COMPILE_CUDA
+
+    cudaDeviceProp prop;
+    cudaGetDeviceProperties(&prop, getBoundGpuId());
+    return prop.maxThreadsPerBlock; // HIP compatible
+
+#else
+    error_gpuQueriedButGpuNotCompiled();
+    return -1;
+#endif
+}
 
 
 std::array<char,17> getBoundGpuUuid() {

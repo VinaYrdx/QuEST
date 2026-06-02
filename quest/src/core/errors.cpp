@@ -650,6 +650,11 @@ void error_gpuUnexpectedlyInaccessible() {
     raiseInternalError("A function internally assumed (as a precondition) that QuEST was compiled with GPU-acceleration enabled, and that one was physically accessible, though this was untrue.");
 }
 
+void error_gpuNumThreadsPerBlockNotSet() {
+
+    raiseInternalError("A function queried the GPU numThreadsPerBlock before it had been set (intendedly by QuESTEnv initialisation).");
+}
+
 void error_gpuMemSyncQueriedButEnvNotGpuAccelerated() {
 
     raiseInternalError("A function checked whether persistent GPU memory (such as in a CompMatr) had been synchronised, but the QuEST environment is not GPU accelerated.");  
@@ -882,6 +887,16 @@ void error_attemptedToParseComplexFromInvalidString() {
 void error_attemptedToParseRealFromInvalidString() {
 
     raiseInternalError("A function attempted to parse a string to a qreal but the string was not validly formatted. This should have been caught by prior user validation.");
+}
+
+void error_attemptedToParseIntegerFromInvalidString() {
+
+    raiseInternalError("A function attempted to parse a string to an int but the string was not validly formatted. This should have been caught by prior user validation.");
+}
+
+void error_attemptedToParseOutOfRangeInteger() {
+
+    raiseInternalError("A function attempted to parse a string to an integer but the numerical value of the string literal exceeded the range of the integer. This should have been caught by prior validation.");
 }
 
 void error_attemptedToParseOutOfRangeReal() {
