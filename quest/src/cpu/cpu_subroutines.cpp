@@ -282,6 +282,15 @@ INSTANTIATE_FUNC_OPTIMISED_FOR_NUM_TARGS( qindex, cpu_statevec_packAmpsIntoBuffe
  * SWAPS
  */
 
+/*
+ * SWAPS
+ */
+
+template <int NumCtrls> void cpu_statevec_anyCtrlSwap_subA(Qureg qureg, vector<int> ctrls, vector<int> ctrlStates, int targ1, int targ2);
+template <int NumCtrls> void cpu_statevec_anyCtrlSwap_subB(Qureg qureg, vector<int> ctrls, vector<int> ctrlStates);
+template <int NumCtrls> void cpu_statevec_anyCtrlSwap_subC(Qureg qureg, vector<int> ctrls, vector<int> ctrlStates, int targ, int targState);
+void cpu_statevec_multiSwap_fused_sub(Qureg qureg, vector<int> targsA, vector<int> targsB);
+
 
 template <int NumCtrls>
 void cpu_statevec_anyCtrlSwap_subA(Qureg qureg, vector<int> ctrls, vector<int> ctrlStates, int targ1, int targ2) {
@@ -379,6 +388,31 @@ INSTANTIATE_FUNC_OPTIMISED_FOR_NUM_CTRLS( void, cpu_statevec_anyCtrlSwap_subA, (
 INSTANTIATE_FUNC_OPTIMISED_FOR_NUM_CTRLS( void, cpu_statevec_anyCtrlSwap_subB, (Qureg qureg, vector<int> ctrls, vector<int> ctrlStates) )
 INSTANTIATE_FUNC_OPTIMISED_FOR_NUM_CTRLS( void, cpu_statevec_anyCtrlSwap_subC, (Qureg qureg, vector<int> ctrls, vector<int> ctrlStates, int targ, int targState) )
 
+// quest/src/cpu/cpu_subroutines.cpp — new function
+
+void cpu_statevec_multiSwap_fused_sub(Qureg qureg, vector<int> targsA, vector<int> targsB) {
+
+    qindex numAmps = qureg.numAmpsPerNode;
+    int numPairs = (int) targsA.size();
+
+    #pragma omp parallel for if(qureg.isMultithreaded)
+    for (qindex i=0; i<numAmps; i++) {
+
+        // O(k) index mapping: apply each disjoint transposition's bit-swap to i.
+        // Branchless: mask is zero when bits agree, flips both bits when they differ.
+        qindex j = i;
+        for (int p=0; p<numPairs; p++) {
+            qindex bitA = (j >> targsA[p]) & 1ULL;
+            qindex bitB = (j >> targsB[p]) & 1ULL;
+            qindex diff = bitA ^ bitB;
+            j ^= (diff << targsA[p]) | (diff << targsB[p]);
+        }
+
+        // Involution guard: each 2-cycle processed exactly once, fixed points untouched.
+        if (j > i)
+            std::swap(qureg.cpuAmps[i], qureg.cpuAmps[j]);
+    }
+}
 
 
 /*
@@ -508,6 +542,13 @@ INSTANTIATE_FUNC_OPTIMISED_FOR_NUM_CTRLS( void, cpu_statevec_anyCtrlTwoTargDense
 
 
 template <int NumCtrls, int NumTargs, bool ApplyConj, bool ApplyTransp>
+
+// -Ofast (enabled in Release builds) implies -ffast-math, which permits the
+// compiler to algebraically simplify (sum - t) + x to 0, silently destroying
+// Neumaier compensation. This attribute scopes fast-math OFF for just this
+// function, preserving -Ofast everywhere else in the translation unit.
+__attribute__((optimize("no-fast-math")))
+
 void cpu_statevec_anyCtrlAnyTargDenseMatr_sub(Qureg qureg, vector<int> ctrls, vector<int> ctrlStates, vector<int> targs, CompMatr matr) {
     
     assert_numCtrlsMatchesNumCtrlStatesAndTemplateParam(ctrls.size(), ctrlStates.size(), NumCtrls);
@@ -571,8 +612,11 @@ void cpu_statevec_anyCtrlAnyTargDenseMatr_sub(Qureg qureg, vector<int> ctrls, ve
 
                 // i = nth local index where ctrls are active and targs form value k
                 qindex i = setBits(i0, targs.data(), numTargBits, k); // loop may be unrolled
-                qureg.cpuAmps[i] = 0;
-            
+
+                // Neumaier-compensated accumulation: error O(eps) independent
+                // of numTargAmps, vs O(numTargAmps * eps) for naive summation.
+                NeumaierAccComplex acc;
+
                 // loop may be unrolled
                 for (qindex j=0; j<numTargAmps; j++) {
 
@@ -589,16 +633,10 @@ void cpu_statevec_anyCtrlAnyTargDenseMatr_sub(Qureg qureg, vector<int> ctrls, ve
                     if constexpr (ApplyConj)
                         elem = std::conj(elem);
 
-                    qureg.cpuAmps[i] += elem * cache[j];
-
-                    /// @todo
-                    /// qureg.cpuAmps[i] is being serially updated by only this thread,
-                    /// so is a candidate for Kahan summation for improved numerical
-                    /// stability. Explore whether this is time-free and worthwhile!
-                    ///
-                    /// BEWARE that Kahan summation is incompatible with the optimisation
-                    /// flags currently passed to this file
+                    acc.add(elem * cache[j]);
                 }
+
+                qureg.cpuAmps[i] = acc.result();
             }
         }
     }

@@ -289,7 +289,9 @@ void accel_statevec_anyCtrlSwap_subC(Qureg qureg, vector<int> ctrls, vector<int>
     auto func = GET_CPU_OR_GPU_FUNC_OPTIMISED_FOR_NUM_CTRLS( statevec_anyCtrlSwap_subC, qureg, ctrls.size() );
     func(qureg, ctrls, ctrlStates, targ, targState);
 }
-
+void accel_statevec_multiSwap_fused_sub(Qureg qureg, vector<int> targsA, vector<int> targsB) {
+    cpu_statevec_multiSwap_fused_sub(qureg, targsA, targsB);
+}
 
 
 /*

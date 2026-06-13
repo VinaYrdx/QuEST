@@ -1,0 +1,15 @@
+{
+	"InstallScripts" : 
+	[
+		"C:/Users/vkgam/QuEST/build/cmake_install.cmake",
+		"C:/Users/vkgam/QuEST/build/quest/cmake_install.cmake",
+		"C:/Users/vkgam/QuEST/build/quest/src/cmake_install.cmake",
+		"C:/Users/vkgam/QuEST/build/quest/src/api/cmake_install.cmake",
+		"C:/Users/vkgam/QuEST/build/quest/src/comm/cmake_install.cmake",
+		"C:/Users/vkgam/QuEST/build/quest/src/core/cmake_install.cmake",
+		"C:/Users/vkgam/QuEST/build/quest/src/cpu/cmake_install.cmake",
+		"C:/Users/vkgam/QuEST/build/quest/src/gpu/cmake_install.cmake",
+		"C:/Users/vkgam/QuEST/build/quest/include/cmake_install.cmake"
+	],
+	"Parallel" : false
+}
