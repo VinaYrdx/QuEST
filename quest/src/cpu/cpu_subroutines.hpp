@@ -14,7 +14,6 @@
 #include "quest/include/matrices.h"
 
 #include "quest/src/core/utilities.hpp"
-#include "quest/src/cpu/kahan.hpp"
 #include <vector>
 
 using std::vector;
