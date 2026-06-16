@@ -670,8 +670,6 @@ void cpu_statevec_anyCtrlAnyTargDenseMatr_sub(Qureg qureg, ConstList64 ctrls, Co
                     /// base_qcomp.hpp before implementing compensation.
                 
                 }
-
-                qureg.cpuAmps[i] = acc.result();
             }
         }
     }
